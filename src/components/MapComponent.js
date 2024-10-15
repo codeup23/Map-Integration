@@ -3,44 +3,35 @@ import { Map as MapLibreMap, NavigationControl, Popup } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import maplibregl from 'maplibre-gl'; // For accessing MapLibre's LngLatBounds
 import axios from 'axios'; // For fetching places from the database
+import HoverCard from './HoverCard'; // Import HoverCard component
 
-const MapComponent = ({mapComponentRef}) => {
+const MapComponent = ({ mapComponentRef }) => {
   const mapContainerRef = useRef(null);
-  const [places, setPlaces] = useState([]); // State to store places from the database
+  const [places, setPlaces] = useState([{ name: 'Delhi', lat: 28.61, lng: 77.23, description: 'Capital of India', _id: 'delhi123', isMarked: true }]); // Store default Delhi place
   const apiKey = '5siyDljYYJ4tQ7tuNBCNZLtXIMw6Frskos1MOYe3'; // Your API key
 
-  const [isSmWindow, setIsSmWindow] = useState(false);
+  const [hoveredPlace, setHoveredPlace] = useState(null); // State for the hovered place
+  const [hoverPosition, setHoverPosition] = useState(null); // State for hovercard position
+  const [popup, setPopup] = useState(null);
 
-  const handleScreen = () => {
-    if(window.innerWidth <= 768) {
-      setIsSmWindow(true);
-    }
-    else{
-      setIsSmWindow(false);
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('resize', handleScreen);
-    return () => window.removeEventListener('resize', handleScreen);
-  }, []);
-
-  // Fetch places from your database (assuming API endpoint returns an array of place objects with lat/lng)
+  // Fetch places from your database
   const fetchPlacesFromDatabase = async () => {
     try {
-      const response = await axios.get('/api/places'); // Adjust this to your actual API endpoint
-      setPlaces(response.data); // Array of place objects with lat/lng coordinates
+      const response = await axios.get('/api/places'); // Adjust to your API
+      setPlaces((prevPlaces) => [...prevPlaces, ...response.data]); // Add fetched places to the default Delhi marker
     } catch (error) {
       console.error('Error fetching places:', error);
     }
   };
 
   useEffect(() => {
-    fetchPlacesFromDatabase(); // Fetch places when component mounts
+    fetchPlacesFromDatabase(); // Fetch places on component mount
 
     const map = new MapLibreMap({
       container: mapContainerRef.current,
       style: 'https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json',
+      zoom: 0.65, // Default zoom
+      center: [0, 23], // Keep center at the world initially
       transformRequest: (url, resourceType) => {
         url = url.replace('app.olamaps.io', 'api.olamaps.io');
         if (url.includes('?')) {
@@ -54,46 +45,34 @@ const MapComponent = ({mapComponentRef}) => {
 
     map.addControl(new NavigationControl(), 'top-left');
 
-    // Load political boundaries
-    map.on('load', () => {
-      // Add a country boundary layer using MapLibre's boundary tileset
-      map.addLayer({
-        id: 'country-boundaries',
-        type: 'line',
-        source: {
-          type: 'vector',
-          url: 'maplibre://mapbox.boundaries-v1', // Predefined tileset for boundaries
-        },
-        'source-layer': 'boundaries',
-        layout: {},
-        paint: {
-          'line-color': '#000000', // Black for boundaries
-          'line-width': 1.5,
-        },
-      });
+    // Set the map background to light orange and water to blue
+    map.on('style.load', () => {
+      map.setPaintProperty('background', 'background-color', '#fcca86');
+      const waterLayer = map.getStyle().layers.find((layer) => layer.id.includes('water'));
+      if (waterLayer) {
+        map.setPaintProperty(waterLayer.id, 'fill-color', '#5fbbf1');
+      }
 
-      // Check if there are places to display
+      // Add source and layer for places
       if (places.length > 0) {
-        const bounds = new maplibregl.LngLatBounds();
-
         map.addSource('places-source', {
           type: 'geojson',
           data: {
             type: 'FeatureCollection',
-            features: places.map((place) => {
-              bounds.extend([place.lng, place.lat]); // Extend bounds for each place
-              return {
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: [place.lng, place.lat],
-                },
-                properties: {
-                  isInDatabase: true, // This will help in styling
-                  name: place.name, // Additional properties
-                },
-              };
-            }),
+            features: places.map((place) => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [place.lng, place.lat],
+              },
+              properties: {
+                isInDatabase: true,
+                name: place.name,
+                description: place.description,
+                _id: place._id,
+                isMarked: place.isMarked,
+              },
+            })),
           },
         });
 
@@ -103,52 +82,35 @@ const MapComponent = ({mapComponentRef}) => {
           source: 'places-source',
           paint: {
             'circle-radius': 8,
-            'circle-color': [
-              'case',
-              ['==', ['get', 'isInDatabase'], true], // Highlight if in database
-              '#ff0000', // Red for places in the database
-              '#000000', // Black for places not in the database
-            ],
+            'circle-color': '#ff0000', // Red color for the city markers
           },
         });
 
-        // Fit the map to the bounds of the places
-        map.fitBounds(bounds, { padding: 50, maxZoom: 15 });
-
-        let popup = new Popup({ closeButton: false, closeOnClick: false });
-
+        // Hover and click functionality for markers
         map.on('mouseenter', 'places-layer', (e) => {
-          map.getCanvas().style.cursor = 'pointer';
-
+          const place = e.features[0].properties;
           const coordinates = e.features[0].geometry.coordinates.slice();
-          const placeName = e.features[0].properties.name;
+          const pixelCoords = map.project(coordinates);
 
-          popup
-            .setLngLat(coordinates)
-            .setHTML(`
-              <div>
-                <h3>${placeName}</h3>
-                <button onclick="viewMore()">View More</button>
-                <button onclick="viewBlogs()">View Blogs</button>
-              </div>
-            `)
-            .addTo(map);
+          setHoveredPlace(place); // Set the place details
+          setHoverPosition({ x: pixelCoords.x, y: pixelCoords.y }); // Set the hovercard position
+          map.getCanvas().style.cursor = 'pointer';
         });
 
         map.on('mouseleave', 'places-layer', () => {
+          setHoveredPlace(null); // Clear hover data
+          setHoverPosition(null);
           map.getCanvas().style.cursor = '';
-          popup.remove();
         });
 
-        window.viewMore = () => {
-          console.log('View More clicked');
-          // Implement the logic to view more details for the place
-        };
-
-        window.viewBlogs = () => {
-          console.log('View Blogs clicked');
-          // Implement the logic to view related blogs for the place
-        };
+        map.on('click', 'places-layer', (e) => {
+          const coordinates = e.features[0].geometry.coordinates.slice();
+          map.flyTo({
+            center: coordinates,
+            zoom: 5,
+            essential: true,
+          });
+        });
       }
     });
 
@@ -157,7 +119,7 @@ const MapComponent = ({mapComponentRef}) => {
 
   return (
     <div ref={mapComponentRef} id='mapComponent' 
-    className='mapComponent min-h-screen flex flex-col md:flex-row justify-around items-center mx-auto py-10 px-6 bg-gradient-to-b from-orange-100 to-orange-100'>
+      className='mapComponent min-h-screen flex flex-col md:flex-row justify-around items-center mx-auto py-10 px-6 bg-gradient-to-b from-orange-100 to-orange-100'>
       <div className='text-box flex flex-col items-center justify-center md:w-1/2 w-full mb-8 md:mb-0 px-6'>
         <h2 className='text-3xl md:text-4xl text-center md:text-left font-bold mb-4'>
           Find the right place for your vacation!</h2>
@@ -165,8 +127,21 @@ const MapComponent = ({mapComponentRef}) => {
           Explore the destination you're planning to visit through people's blogs and their stay experiences so that you plan better next time. 
           Make a list of most wanted places you want to visit, hop-on in!</p>
       </div>
-      
-      <div id="map" ref={mapContainerRef} className={`h-[500px] w-7/12 rounded-lg max-h-[500px]`}></div>
+
+      <div id="map" ref={mapContainerRef} className={`h-[500px] w-7/12 rounded-lg max-h-[500px] relative`}>
+        {hoveredPlace && hoverPosition && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${hoverPosition.x}px`,
+              top: `${hoverPosition.y}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <HoverCard place={hoveredPlace} onClose={() => setHoveredPlace(null)} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

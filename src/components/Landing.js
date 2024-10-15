@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import background from '../assets/BG-Image.png';
 import logo from '../assets/LOGO2.png';
 import VanillaTilt from 'vanilla-tilt';
@@ -6,45 +6,70 @@ import MapComponent from './MapComponent';
 
 const Landing = () => {
   const mapComponentRef = useRef(null);
+  const scrollLinkRef = useRef(null);
+  const landingSectionRef = useRef(null);
+  const [isInLandingSection, setIsInLandingSection] = useState(true); // Track if user is in the Landing section
+  const [lastScrollTop, setLastScrollTop] = useState(0); // Track the scroll direction
 
   useEffect(() => {
-    // Initialize the VanillaTilt effect
+    // Initialize VanillaTilt effect for the logo
     VanillaTilt.init(document.querySelectorAll('#logo'), {
       reverse: true,
       max: 10,
       speed: 400,
       scale: 1.1,
       glare: true,
-      'max-glare': 1,
+      'max-glare': 10,
     });
   }, []);
 
-  // useEffect(() => {
-  //   const handleScroll = (event) => {
-  //     // Detect if we're scrolling down
-  //     const scrollY = window.scrollY;
-  //     const landingBottom = landingSectionRef.current.getBoundingClientRect().bottom;
+  const handleScroll = () => {
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-  //     if (scrollY > landingBottom - window.innerHeight && mapComponentRef.current) {
-  //       // Scroll smoothly to the MapComponent when scrolling down and exiting the landing section
-  //       mapComponentRef.current.scrollIntoView({ behavior: 'smooth' });
-  //     }
-  //   };
+    // Detect if the user is scrolling down and is in the landing section
+    if (isInLandingSection && currentScrollTop > lastScrollTop && scrollLinkRef.current) {
+      scrollLinkRef.current.click(); // Trigger scroll to MapComponent
+    }
+    setLastScrollTop(currentScrollTop <= 0 ? 0 : currentScrollTop); // Update scroll position
+  };
 
-  //   window.addEventListener('scroll', handleScroll);
+  useEffect(() => {
+    // IntersectionObserver to track visibility of the landing section
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsInLandingSection(entry.isIntersecting); // Update when the landing section is visible
+      },
+      { threshold: 0.5 } // Trigger when 50% of the section is visible
+    );
 
-  //   return () => {
-  //     window.removeEventListener('scroll', handleScroll); // Cleanup the event listener
-  //   };
-  // }, [mapComponentRef]);
+    if (landingSectionRef.current) {
+      observer.observe(landingSectionRef.current);
+    }
+
+    return () => {
+      if (landingSectionRef.current) {
+        observer.unobserve(landingSectionRef.current); // Clean up observer
+      }
+    };
+  }, []);
+
+  // Use both 'wheel' (for mouse and touchpad) and 'scroll' events for broader compatibility
+  useEffect(() => {
+    window.addEventListener('wheel', handleScroll); // Listen for mouse scroll (wheel) events
+    // window.addEventListener('scroll', handleScroll); // Listen for general scroll events (touchpad, keyboard, etc.)
+
+    return () => {
+      window.removeEventListener('wheel', handleScroll); // Clean up wheel event listener
+      // window.removeEventListener('scroll', handleScroll); // Clean up scroll event listener
+    };
+
+    console.log("Scroll Event");
+  }, [isInLandingSection, lastScrollTop]);
 
   return (
-    <div className="landing" onScroll={() => {
-      mapComponentRef.current?.scrollIntoView({
-        behaviour : 'smooth'
-      })
-    }}>
-      <main>
+    <div>
+      <main className="landing" ref={landingSectionRef}>
         <section
           style={{
             backgroundImage: `url(${background})`,
@@ -59,14 +84,17 @@ const Landing = () => {
               id="logo"
               src={logo}
               alt="Company Logo"
-              className="mx-auto my-6 object-cover object-center w-full xl:w-full max-w-[450px]" // Responsive sizing for the image
+              className="mx-auto my-6 object-cover object-center w-full xl:w-full max-w-[450px]"
             />
           </div>
         </section>
+
+        {/* Scroll link to MapComponent */}
+        <a className="scrollLink" href="#mapComponent" ref={scrollLinkRef}></a>
       </main>
 
-      {/* MapComponent to scroll to */}
-      <MapComponent ref={mapComponentRef} />
+      {/* MapComponent */}
+      <MapComponent ref={mapComponentRef} id={"mapComponent"} />
     </div>
   );
 };
