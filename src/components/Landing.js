@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import background from '../assets/BG-Image.png';
+import background from '../assets/bg-image1.jpg';
 import logo from '../assets/LOGO2.png';
 import VanillaTilt from 'vanilla-tilt';
 import MapComponent from './MapComponent';
@@ -8,11 +8,12 @@ const Landing = () => {
   const mapComponentRef = useRef(null);
   const scrollLinkRef = useRef(null);
   const landingSectionRef = useRef(null);
-  const [isInLandingSection, setIsInLandingSection] = useState(true); // Track if user is in the Landing section
-  const [lastScrollTop, setLastScrollTop] = useState(0); // Track the scroll direction
+  const [isInLandingSection, setIsInLandingSection] = useState(true);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+  const [zIndex, setZIndex] = useState(1); // Initially set to positive z-index
+  const [opacity, setOpacity] = useState(1); // Opacity for smooth transition
 
   useEffect(() => {
-    // Initialize VanillaTilt effect for the logo
     VanillaTilt.init(document.querySelectorAll('#logo'), {
       reverse: true,
       max: 10,
@@ -23,53 +24,21 @@ const Landing = () => {
     });
   }, []);
 
-  const handleScroll = () => {
-    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  // useEffect(() => {
+  //   window.addEventListener('wheel', handleScroll);
 
-    // Detect if the user is scrolling down and is in the landing section
-    if (isInLandingSection && currentScrollTop > lastScrollTop && scrollLinkRef.current) {
-      scrollLinkRef.current.click(); // Trigger scroll to MapComponent
-    }
-    setLastScrollTop(currentScrollTop <= 0 ? 0 : currentScrollTop); // Update scroll position
-  };
-
-  useEffect(() => {
-    // IntersectionObserver to track visibility of the landing section
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        setIsInLandingSection(entry.isIntersecting); // Update when the landing section is visible
-      },
-      { threshold: 0.5 } // Trigger when 50% of the section is visible
-    );
-
-    if (landingSectionRef.current) {
-      observer.observe(landingSectionRef.current);
-    }
-
-    return () => {
-      if (landingSectionRef.current) {
-        observer.unobserve(landingSectionRef.current); // Clean up observer
-      }
-    };
-  }, []);
-
-  // Use both 'wheel' (for mouse and touchpad) and 'scroll' events for broader compatibility
-  useEffect(() => {
-    window.addEventListener('wheel', handleScroll); // Listen for mouse scroll (wheel) events
-    // window.addEventListener('scroll', handleScroll); // Listen for general scroll events (touchpad, keyboard, etc.)
-
-    return () => {
-      window.removeEventListener('wheel', handleScroll); // Clean up wheel event listener
-      // window.removeEventListener('scroll', handleScroll); // Clean up scroll event listener
-    };
-
-    console.log("Scroll Event");
-  }, [isInLandingSection, lastScrollTop]);
+  //   return () => {
+  //     window.removeEventListener('wheel', handleScroll);
+  //   };
+  // }, [isInLandingSection, lastScrollTop]);
 
   return (
     <div>
-      <main className="landing" ref={landingSectionRef}>
+      <main 
+        className="landing" 
+        ref={landingSectionRef}
+      >
+
         <section
           style={{
             backgroundImage: `url(${background})`,
@@ -77,25 +46,24 @@ const Landing = () => {
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
           }}
-          className="bg-transparent bg-center h-screen flex items-center justify-center"
+          className="bg-transparent bg-center h-screen flex flex-col md:flex-row items-center justify-around px-10 md:px-20 space-y-1 md:space-y-0 pb-10"
         >
-          <div className="text-center animate-fadeUp">
+          {/* Right Side: Logo with Conditional Shrinking */}
+          <div className="animate-fadeUp">
             <img
               id="logo"
               src={logo}
               alt="Company Logo"
-              className="mx-auto my-6 object-cover object-center w-full xl:w-full max-w-[450px]"
+              className="object-contain object-center w-full max-w-[300px] md:max-w-[450px] lg:max-w-[550px] overflow-hidden"
+              style={{
+                maxHeight: '350px',
+              }}
             />
           </div>
         </section>
-
-        {/* Scroll link to MapComponent */}
-        <a className="scrollLink" href="#mapComponent" ref={scrollLinkRef}></a>
       </main>
 
-      {/* MapComponent */}
-      <MapComponent ref={mapComponentRef} id={"mapComponent"} />
-    </div>
+      </div>
   );
 };
 

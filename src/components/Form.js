@@ -3,7 +3,6 @@ import ScrollReveal from './ScrollReveal';
 
 const Form = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-  const [isScrolled, setIsScrolled] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,23 +29,12 @@ const Form = () => {
     }
   };
 
-  const handleScroll = () => { 
-    if (window.scrollY > 1500) { 
-      setIsScrolled(true); 
-    } 
-  };
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div id='contact' className={`contact flex justify-around flex-wrap items-center min-h-screen bg-gradient-to-b from-orange-100 to-orange-400 p-8`}>
       
-      <div className={`flex flex-col max-w-xl py-10 justify-center items-start ${isScrolled ? 'animate-fadeUp' : 'opacity-0 animate-none'}`}>
+      <div className={`flex flex-col max-w-xl py-10 justify-center items-start `}>
         
-        <h3 className='text-4xl  font-bold my-3'>About Us</h3>
+        <h3 className='text-4xl font-bold my-3'>About Us</h3>
         <p className='text-lg '>
           Lorem ipsum, dolor sit amet consectetur adipisicing elit. Molestias tempore rerum eum! Adipisci provident voluptate fugit, blanditiis deleniti nisi veniam fuga tempore dolores numquam id ipsam, neque est ad unde.
           Lorem ipsum dolor, sit amet consectetur adipisicing elit. Nesciunt quas voluptates itaque magni! At ipsa laboriosam, magni quaerat quibusdam eum veritatis? Earum vel facere quisquam officiis dignissimos ipsum, voluptas itaque?
@@ -55,7 +43,7 @@ const Form = () => {
       </div>
 
 
-      <form className={`bg-white p-8 py-10 rounded-lg shadow-md max-w-md w-full ${isScrolled ? 'animate-fadeUp' : 'opacity-0 animate-none'} `} onSubmit={handleSubmit}>
+      <form className={`bg-white p-8 py-10 rounded-lg shadow-md max-w-md w-full`} onSubmit={handleSubmit}>
         
         <h2 className="text-2xl font-bold mb-4 text-center">Send us a message</h2>
         <div className="mb-4">
@@ -63,6 +51,7 @@ const Form = () => {
           <input
             type="text"
             name="name"
+            placeholder='Enter your name'
             value={formData.name}
             onChange={handleChange}
             className="w-full p-2 border rounded-lg mt-2"
@@ -74,6 +63,7 @@ const Form = () => {
           <input
             type="email"
             name="email"
+            placeholder='abc@email.com'
             value={formData.email}
             onChange={handleChange}
             className="w-full p-2 border rounded-lg mt-2"

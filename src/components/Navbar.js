@@ -64,9 +64,9 @@ const Navbar = () => {
 
         {/* Links for Larger Screens */}
         <ul className={`hidden sm:flex items-center justify-center px-12 ${isScrolled ? 'mx-auto' : 'mx-0'} space-x-6`}>
-          <li><a href="#" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-black'} hover:text-orange-300 transition-colors font-bold`}>Home</a></li>
-          <li><a href="#description" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-black'} hover:text-orange-300 transition-colors font-bold`}>About</a></li>
-          <li><a href="#contact" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-black'} hover:text-orange-300 transition-colors font-bold`}>Contact</a></li>
+          <li><a href="#" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-white'} hover:text-orange-300 transition-colors font-bold`}>Home</a></li>
+          <li><a href="#description" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-white'} hover:text-orange-300 transition-colors font-bold`}>About</a></li>
+          <li><a href="#contact" className={`px-2 text-lg ${!isScrolled ? 'text-gray-100' : 'text-white'} hover:text-orange-300 transition-colors font-bold`}>Contact</a></li>
         </ul>
 
         {/* Slide-in Menu for Small Screens */}

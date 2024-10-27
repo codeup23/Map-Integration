@@ -3,11 +3,9 @@ import React, { useRef } from 'react';
 import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './components/Landing';
-import Description from './components/Description';
-import Form from './components/Form';
 import './App.css';
-import MapComponent from './components/MapComponent';
 import { Footer } from './components/Footer';
+import Content from './components/Content';
 
 function App() {
 
@@ -23,13 +21,8 @@ function App() {
       
       <Navbar />
 
-      <Landing/>
+      <Content/>
 
-      <Description/>
-
-      <Form/>
-      
-      <Footer/>
     </div>
   );
 }
